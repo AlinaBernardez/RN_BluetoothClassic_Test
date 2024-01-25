@@ -2,11 +2,16 @@ import * as React from 'react';
 import RNBluetoothClassic, {BluetoothDevice} from 'react-native-bluetooth-classic';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { getDevices, requestPermission } from './useBT.js';
+import { dataStreaming, requestPermission } from './useBT.js';
+
 
 export default function App() {
   const [showThub, setShowThub] = React.useState(false);
   const [inclination, setInclination] = React.useState();
+
+  let connectionOptions = {
+    CONNECTION_TYPE: 'binary',
+  }
 
   const scanForDevices = async () => {
     const hasPermission = await requestPermission();
@@ -26,14 +31,35 @@ export default function App() {
               bonded = th.bonded
             })
             if(!bonded) {
-              const pairing = await RNBluetoothClassic.pairDevice(address)
-              console.log(pairing, 'device Paired')
+              await RNBluetoothClassic.pairDevice(address)
+              console.log('device Paired')
+              dataStreaming(address)
             } else {
-              console.log('Device already paired')
+              console.log('Device already paired', address)
+              let connection = await thub[0].connect(connectionOptions)
+              if(connection) {
+                //Check for available data:
+                const available = await thub[0].available()
+                console.log('Available:', available)
+                //Read data:
+                let stream = await thub[0].read()
+                let myBuffer = []
+                let buffer = Buffer.from(stream, 'utf-8')
+                console.log(buffer.length, buffer)
+                // for (var i = 0; i < buffer.length; i++) {
+                //   myBuffer.push(buffer[i]);
+                // }
+                // console.log(myBuffer)
+                // var incomingData = new Uint8Array(myBuffer); // create a uint8 view on the ArrayBuffer
+                // var outputData = new Float32Array(incomingData.length); // create the Float32Array for output
+                // for (let i = 0; i < incomingData.length; i++) {
+                //     outputData[i] = (incomingData[i] - 128) / 128.0; // convert audio to float
+                // }
+                // console.log(outputData)
+              }
             }
-            
           } else {
-            console.log('No devices found')
+            console.log('THUB not found')
           }
         }
       } catch (err) {

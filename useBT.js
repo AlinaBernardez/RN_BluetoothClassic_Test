@@ -61,22 +61,14 @@ export const requestPermission = async () => {
     }
 }
 
-export const getDevices = async () => {
-    try {
-    const unpaired = await RNBluetoothClassic.startDiscovery();
-    console.log(`Found ${unpaired.length} unpaired devices.`);
-    return unpaired
-    } catch {
-        console.log('No devices found')
-    }     
-}
-
-export const startDiscovery = async () => {
-    try {
-    const unpaired = await RNBluetoothClassic.startDiscovery();
-    console.log(`Found ${unpaired.length} unpaired devices.`);
-    } catch (err) {
-    console.log(err.message);
+export const dataStreaming = async (ad) => {
+    const device = await RNBluetoothClassic.getConnectedDevice(ad)
+    console.log(device)
+    try {      
+        const connectedDevice = await device.connect()
+        console.log(connectedDevice)
+    } catch (error) {
+        console.log('Not able to connect')
     }
 }
 
