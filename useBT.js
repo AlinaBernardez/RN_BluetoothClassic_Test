@@ -1,6 +1,7 @@
 import RNBluetoothClassic, {BluetoothDevice} from 'react-native-bluetooth-classic';
 import { PermissionsAndroid, Platform } from 'react-native';
 import * as ExpoDevice from 'expo-device';
+import { TextEncoder } from 'text-decoding';
 
 async function requestAndroid31Permission() {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -59,18 +60,46 @@ export const requestPermission = async () => {
     } else {
         return true
     }
+};
+
+const conversion = (string) => {
+    let encoded = new TextEncoder().encode(string)
+    // let incoming = Buffer.from(data.data, 'utf-8')
+    // let incomingData = new Uint8Array(incoming)
+    // console.log(incomingData)
+    // let arrayBuffer = new ArrayBuffer(8)
+    // new Uint8Array(arrayBuffer).set(incomingData)
+    // let view = new DataView(arrayBuffer).getFloat32(0, false)
+
+    let incomingArray = Array.from(encoded)
+    // for(let i = 0; i < encoded.length; i++) {
+    //     incomingArray[i] = encoded[i]
+    // }
+    incomingArray.pop()
+    let uint8 = new Uint8Array(incomingArray)
+    let floats = new Float32Array(uint8.buffer)
+    console.log(floats)
 }
 
-export const dataStreaming = async (ad) => {
-    const device = await RNBluetoothClassic.getConnectedDevice(ad)
-    console.log(device)
-    try {      
-        const connectedDevice = await device.connect()
-        console.log(connectedDevice)
-    } catch (error) {
-        console.log('Not able to connect')
+export const performRead = async (d) => {
+    try {
+        console.log('Polling for available messages');
+        let available = await d.available();
+        console.log(`There is data available [${available}], attempting read`);
+        if (available > 0) {
+                let message = await d.read();
+                console.log(message)
+                d.onDataReceived((data) => {
+                    let incoming = data.data
+                    conversion(incoming)
+                })
+        }
+    } catch (err) {
+        console.log(err);
     }
-}
+};
 
-
+export const stopReading = async(d) => {
+    await d.disconnect()
+};
 

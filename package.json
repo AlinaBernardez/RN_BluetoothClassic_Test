@@ -14,9 +14,10 @@
     "expo-status-bar": "~1.11.1",
     "react": "18.2.0",
     "react-native": "0.73.2",
-    "react-native-base64": "^0.2.1",
-    "react-native-bluetooth-classic": "^1.73.0-rc.3",
-    "with-rn-bluetooth-classic": "^1.0.5"
+    "react-native-base64": "0.2.1",
+    "react-native-bluetooth-classic": "1.73.0-rc.3",
+    "text-decoding": "^1.0.0",
+    "with-rn-bluetooth-classic": "1.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
