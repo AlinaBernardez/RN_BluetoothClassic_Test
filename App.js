@@ -3,23 +3,26 @@ import RNBluetoothClassic, {BluetoothDevice} from 'react-native-bluetooth-classi
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { performRead, requestPermission } from './useBT.js';
+import base64, { decode } from 'react-native-base64';
 
 let device = null;
+let decoded = 90;
 
 export default function App() {
   const [showThub, setShowThub] = React.useState(false);
-  const [inclination, setInclination] = React.useState();
+  const [inclination, setInclination] = React.useState(decoded);
   // const [device, setDevice] = React.useState(null);
   const [stop, setStop] = React.useState(false);
 
   let address
   let bonded
+  let interval
 
   React.useEffect(() => {
-    stop && stopReading(device)
-  }, [stop])
+    setInclination((90 - parseFloat(decoded)).toFixed(2))
+  }, [decoded])
 
-  // oriingal config that doesn't work (keep for accidents)
+  // original config that doesn't work (keep for accidents)
   let connectionOptions = {
     CONNECTION_TYPE: 'binary',
     DELIMITER: '\n',
@@ -40,24 +43,49 @@ export default function App() {
             device = thub[0]
             address = device.address
             bonded = device.bonded
+            console.log(device.address)
             if(!bonded) {
               console.log('bonding')
               await RNBluetoothClassic.pairDevice(address)
               console.log('device Paired')
-              await device.connect(connectionOptions)
-              console.log('connected')
-              await performRead(device)
+              const connection = await device.connect(connectionOptions)
+              if(connection) {
+                console.log('connected')
+                interval = setInterval(async () => {
+                  reading = await device.read()
+                  if(reading) {
+                    decoded = base64.decode(reading.trimEnd())
+                    if(decoded.length > 1) {
+                      setInclination((90 - parseFloat(decoded)).toFixed(2))
+                      console.log(`Client decoded reading: ${decoded}`)
+                    }
+                  }
+                }, 100)
+                reading = await performRead(device)
+                console.log('Client:', reading)
+              }
             } else {
               console.log('Device already paired')
               try {
-                console.log('trying to connect to tiltit')
+                console.log('Trying to connect to tiltit')
                 const connection = await device.connect(connectionOptions);
                 if(connection) {
                   console.log('connected')
-                  await performRead(device)
+                  // interval = setInterval(async () => {
+                  //   reading = await device.read()
+                  //   if(reading) {
+                  //     decoded = base64.decode(reading.trimEnd())
+                  //     if(decoded.length > 1) {
+                  //       setInclination((90 - parseFloat(decoded)).toFixed(2))
+                  //       console.log(`Client decoded reading: ${decoded}`)
+                  //     }
+                  //   }
+                  // }, 100)
+                  // reading = await performRead(device)
+                  // console.log('Client:', reading)
                 }
               } catch (err) {
-                console.error('sub', err);
+                console.error('THUB not connected', err);
               }
             }
           }
@@ -72,15 +100,17 @@ export default function App() {
 
 const stopReading = async(d) => {
     await d.disconnect()
+    clearInterval(interval)
+    console.log('Disconnected and cleared')
 };
 
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      <Text>Tilt angle: {inclination}</Text>
       <Pressable style={{backgroundColor: 'tomato', padding: 20, margin: 15}} onPress={() => scanForDevices()}>
-        <Text>Look for devices</Text>
+        <Text>Connect & read</Text>
       </Pressable>
-        <Pressable style={{backgroundColor: 'tomato', padding: 20, margin: 15}} onPress={() => setStop(true)}>
+        <Pressable style={{backgroundColor: 'tomato', padding: 20, margin: 15}} onPress={() => stopReading(device)}>
           <Text>Stop listening</Text>
         </Pressable>
       <StatusBar style="dark" />

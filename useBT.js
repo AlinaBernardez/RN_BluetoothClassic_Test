@@ -63,37 +63,34 @@ export const requestPermission = async () => {
     }
 };
 
+async function reading(dev) {
+    let reading = await dev.read()
+    return reading
+};
+
 export const performRead = async (d) => {
     let incoming;
     let decoded;
+    let message;
     try {
         console.log('Polling for available messages');
         let available = await d.available();
         if (available > 0) {
-            // for (let i = 0; i < available; i++) {
-            //     // console.log(`reading ${i}th time`);
-            //     let data = await d.read();
-            //     if(data) {
-            //         console.log(data)
-            //         let decoded = base64.decode(data.trimEnd())
-            //         console.log(`decoded data: ${decoded}`)
-            //         // let incoming = Buffer.from(decoded, 'utf-8')
-            //         // let incomingData = new Uint8Array(incoming)
-            //         // console.log(incomingData.byteLength)
-            //     } 
-            // }
-                // let message = await d.read();
-                // console.log(message, typeof message)
             d.onDataReceived((data) => {
                 incoming = data.data
                 decoded = base64.decode(incoming.trimEnd())
-                console.log(`decoded data: ${decoded}`)
+                if(decoded.length > 1) {
+                    console.log(`Decoded: ${decoded}`)
+                    return decoded
+                }
             })
         }
     } catch (err) {
         console.log(err);
     }
 };
+
+
 
 
 
